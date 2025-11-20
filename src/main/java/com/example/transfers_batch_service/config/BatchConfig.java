@@ -87,6 +87,7 @@ public class BatchConfig {
                 .start(demoStep())
                 .build();
     }
+    //Bean para leer el archivo de entrada. Mapea cada línea del archivo a un objeto TransferLineInput
     @Bean
     public FlatFileItemReader<TransferLineInput> transferFileReader() {
         FlatFileItemReader<TransferLineInput> reader = new FlatFileItemReader<>();
@@ -121,13 +122,14 @@ public class BatchConfig {
     }
 
     //Transforma cada TransferLineInput en un TransferResultOutput. Aqui tengo la logica del negocio (validaciones, calculos)
+    //Realiza una llamada HTTP al servicio de transferencias y Maneja los errores de la API.
     @Bean
     public ItemProcessor<TransferLineInput, TransferResultOutput> transferProcessor(RestTemplate restTemplate) {
 
         ObjectMapper objectMapper = new ObjectMapper(); // para leer el JSON de error
 
         return line -> {
-            // 1) Armamos el body que espera mi API
+            // 1) Armo el body que espera mi API
             Map<String, Object> body = Map.of(
                     "customer", Map.of("customerId", line.getCustomerId()),
                     "sourceAccount", Map.of("accountId", line.getSourceAccountId()),
@@ -161,7 +163,7 @@ public class BatchConfig {
                     }
                 }
 
-                out.setSuccess(true);      // ✅ fue exitoso
+                out.setSuccess(true);      //  fue exitoso
                 out.setErrorCode(null);
                 out.setErrorMessage(null);
 
@@ -196,7 +198,7 @@ public class BatchConfig {
                 out.setCommissionApplied(null);
             }
 
-            // 4) Copiamos SIEMPRE los datos de entrada del TXT
+            // 4) Copio SIEMPRE los datos de entrada del TXT
             out.setCustomerId(line.getCustomerId());
             out.setSourceAccountId(line.getSourceAccountId());
             out.setDestAccountId(line.getDestAccountId());
@@ -208,6 +210,7 @@ public class BatchConfig {
         };
     }
 
+    //Configuración del Escritor Parquet
     //Escribe los TransferResultOutput (datos procesados) en un archivo Parquet
     @Bean
     public ItemWriter<TransferResultOutput> transferParquetWriter(
@@ -260,7 +263,16 @@ public class BatchConfig {
                         record.put("transferId", item.getTransferId());
                         record.put("status", item.getStatus());
                         record.put("transferType", item.getTransferType());
-                        // ... add all other fields from TransferResultOutput to the record
+                        record.put("commissionApplied", item.getCommissionApplied());
+                        record.put("customerId", item.getCustomerId());
+                        record.put("sourceAccountId", item.getSourceAccountId());
+                        record.put("destAccountId", item.getDestAccountId());
+                        record.put("currency", item.getCurrency());
+                        record.put("amount", item.getAmount());
+                        record.put("description", item.getDescription());
+                        record.put("success", item.getSuccess());
+                        record.put("errorCode", item.getErrorCode());
+                        record.put("errorMessage", item.getErrorMessage());
 
                         writer.write(record);
                     }
@@ -274,6 +286,7 @@ public class BatchConfig {
         };
     }
 
+    //Este bean define una unidad de trabajo dentro de mi job de Spring Batch . inicio
     @Bean
     public Step importTransfersStep(FlatFileItemReader<TransferLineInput> transferFileReader,
                                     ItemProcessor<TransferLineInput, TransferResultOutput> transferProcessor,
@@ -312,10 +325,11 @@ public class BatchConfig {
     }
 
 
+    //Este bean define el trabajo completo que se ejecutara
     @Bean
     public Job importTransfersJob(Step importTransfersStep) {
         return new JobBuilder("importTransfersJob", jobRepository)
-                .incrementer(new RunIdIncrementer())  // 👈 clave
+                .incrementer(new RunIdIncrementer())  // clave
                 .start(importTransfersStep)
                 .build();
     }

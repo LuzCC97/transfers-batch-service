@@ -1,1 +1,2 @@
-CUST-1002|001-111111|001-222222|USD|10.0|transferencia de prueba 10
+CUST-1001|001-111111|001-222222|USD|10.0|transferencia de prueba 1
+CUST-1002|001-111111|001-222222|USD|10.0|transferencia de prueba 2
