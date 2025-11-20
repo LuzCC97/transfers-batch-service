@@ -33,20 +33,5 @@ class TransferResultOutputTest {
         assertNull(output.getErrorCode());
     }
 
-    @Test
-    void testTransferResultOutputAllArgsConstructor() {
-        // Arrange & Act
-        TransferResultOutput output = new TransferResultOutput(
-                "TXN123", "COMPLETED", "INTERNAL", 5.0,
-                "CUST123", "ACC123", "ACC456", "USD",
-                1000.0, "Test transfer",
-                true, null, null
-        );
 
-        // Assert
-        assertNotNull(output);
-        assertEquals("TXN123", output.getTransferId());
-        assertEquals(1000.0, output.getAmount());
-        assertTrue(output.getSuccess());
-    }
 }

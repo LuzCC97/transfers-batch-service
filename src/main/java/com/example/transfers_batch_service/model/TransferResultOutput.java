@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class TransferResultOutput {
 
     // Campos que vienen de la API de transfers
+    private String originId;
     private String transferId;
     private String status;
     private String transferType;

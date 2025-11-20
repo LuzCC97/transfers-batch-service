@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransferLineInput {
-
+    private String originId;
     private String customerId;
     private String sourceAccountId;
     private String destAccountId;

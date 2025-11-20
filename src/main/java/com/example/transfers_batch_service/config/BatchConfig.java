@@ -45,6 +45,7 @@ public class BatchConfig {
             + "\"name\":\"TransferResultOutput\","
             + "\"namespace\":\"com.example.transfersbatch.parquet\","
             + "\"fields\":["
+            + "  {\"name\":\"originId\",        \"type\":[\"null\",\"string\"], \"default\":null},"
             + "  {\"name\":\"transferId\",      \"type\":[\"null\",\"string\"], \"default\":null},"
             + "  {\"name\":\"status\",          \"type\":[\"null\",\"string\"], \"default\":null},"
             + "  {\"name\":\"transferType\",    \"type\":[\"null\",\"string\"], \"default\":null},"
@@ -101,13 +102,14 @@ public class BatchConfig {
         // Tokenizer: separa por | y asigna nombres de campos
         DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
         tokenizer.setDelimiter("|");
-        tokenizer.setNames("customerId", "sourceAccountId", "destAccountId",
+        tokenizer.setNames("originId", "customerId", "sourceAccountId", "destAccountId",
                 "currency", "amount", "description");
 
         // FieldSetMapper: construye el objeto TransferLineInput
         lineMapper.setLineTokenizer(tokenizer);
         lineMapper.setFieldSetMapper(fieldSet -> {
             TransferLineInput item = new TransferLineInput();
+            item.setOriginId(fieldSet.readString("originId"));
             item.setCustomerId(fieldSet.readString("customerId"));
             item.setSourceAccountId(fieldSet.readString("sourceAccountId"));
             item.setDestAccountId(fieldSet.readString("destAccountId"));
@@ -183,7 +185,7 @@ public class BatchConfig {
                     errorCode = (String) errorMap.get("error");
                     errorMessage = (String) errorMap.get("message");
                 } catch (Exception ex) {
-                    // Si por alguna razón no se puede parsear, guardamos todo el body en errorMessage
+                    // Si por alguna razón no se puede parsear, guardamos el body en errorMessage
                     errorMessage = responseBody;
                 }
 
@@ -199,6 +201,7 @@ public class BatchConfig {
             }
 
             // 4) Copio SIEMPRE los datos de entrada del TXT
+            out.setOriginId(line.getOriginId());
             out.setCustomerId(line.getCustomerId());
             out.setSourceAccountId(line.getSourceAccountId());
             out.setDestAccountId(line.getDestAccountId());
@@ -260,6 +263,7 @@ public class BatchConfig {
                     for (TransferResultOutput item : items) {
                         GenericRecord record = new GenericData.Record(schema);
                         // Map your TransferResultOutput to GenericRecord
+                        record.put("originId", item.getOriginId());
                         record.put("transferId", item.getTransferId());
                         record.put("status", item.getStatus());
                         record.put("transferType", item.getTransferType());
@@ -298,7 +302,7 @@ public class BatchConfig {
         System.out.println("Writer: " + (transferParquetWriter != null ? "OK" : "NULL"));
 
         return new StepBuilder("importTransfersStep", jobRepository)
-                .<TransferLineInput, TransferResultOutput>chunk(10, transactionManager) // Reducido para depuración
+                .<TransferLineInput, TransferResultOutput>chunk(100, transactionManager) // Reducido para depuración
                 .reader(transferFileReader)
                 .processor(transferProcessor)
                 .writer(transferParquetWriter)

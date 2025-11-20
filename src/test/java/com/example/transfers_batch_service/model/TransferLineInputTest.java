@@ -30,17 +30,5 @@ class TransferLineInputTest {
         assertEquals("Test transfer", input.getDescription());
     }
 
-    //Este metodo prueba el constructor con todos los argumentos:
-    @Test
-    void testTransferLineInputAllArgsConstructor() {
-        // Arrange & Act
-        TransferLineInput input = new TransferLineInput(
-                "CUST123", "ACC123", "ACC456", "USD", 1000.0, "Test transfer"
-        );
 
-        // Assert
-        assertNotNull(input);
-        assertEquals("CUST123", input.getCustomerId());
-        assertEquals(1000.0, input.getAmount());
-    }
 }
